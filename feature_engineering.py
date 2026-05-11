@@ -63,16 +63,6 @@ def engineer_features(df):
     print("Creating user identifier...")
     df = df.withColumn( "user_id", concat_ws( "_", col("city"), col("job"), col("dob") ) )
    
-    if "cc_num" in df.columns:
-        df = df.withColumn(
-            "cc_num",
-            trim(regexp_replace(
-                    col("cc_num"),
-                    '"',
-                    ''
-                )
-            )
-        )
 
     print("Creating user behavior features")
 
