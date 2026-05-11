@@ -8,7 +8,7 @@ from pyspark.sql import Window
 
 def engineer_features(df):
     
-    print("Extracting date and time components...")
+    print("Extracting date and time components")
     
     if "trans_date_trans_time" in df.columns:
         df = df.withColumn("date_clean", 
