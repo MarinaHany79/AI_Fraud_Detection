@@ -136,9 +136,9 @@ def handle_missing_values(df):
             print(f"{column}: still has {null_count} nulls")
     
     if remaining_nulls == 0:
-        print("✓ All missing values handled successfully!")
+        print("All missing values handled successfully")
     else:
-        print(f"⚠ {remaining_nulls} total nulls remaining")
+        print(f"{remaining_nulls} total nulls remaining")
     
     print(f"\nFinal shape: {df_clean.count():,} rows, {len(df_clean.columns)} columns")
     
@@ -188,7 +188,7 @@ def balance_classes_oversample(df, fraud_col="is_fraud", seed=42):
     print(f"   Non-Fraud (0): {non_fraud_count} rows")
     
     if fraud_count == 0:
-        print("No fraud samples found!")
+        print("No fraud samples found")
         return df
     
     multiplier = (non_fraud_count // fraud_count) + 1
