@@ -22,14 +22,12 @@ def train_logistic_regression(train_data, feature_col="scaled_features"):
     return model
 
 def train_random_forest(train_data, feature_col="scaled_features"):
- 
     rf = RandomForestClassifier(featuresCol=feature_col,labelCol="is_fraud",numTrees=50,maxDepth=10,seed=42)
     model = rf.fit(train_data)
     print(f" Random Forest trained successfully! ({model.numTrees} trees)")
     return model
 
 def train_gradient_boosting(train_data, feature_col="scaled_features"):
-   
     gbt = GBTClassifier(featuresCol=feature_col,labelCol="is_fraud",maxIter=50,maxDepth=5,stepSize=0.1,seed=42)
     model = gbt.fit(train_data)
     print("Gradient Boosting trained successfully!")
