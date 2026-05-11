@@ -1,4 +1,4 @@
-from pyspark.sql.functions import (avg,count,lag,when,col,trim,regexp_replace,split,regexp_extract,coalesce)
+from pyspark.sql.functions import (avg,count,lag,when,col,trim,regexp_replace,split,regexp_extract,coalesce,concat_ws)
 from pyspark.sql import Window
 
 def engineer_features(df):
@@ -66,13 +66,13 @@ def engineer_features(df):
 
     print("Creating user behavior features")
 
-user_col = "user_id"
-user_window = Window.partitionBy(user_col) 
-# Transaction Frequency
-df.withColumn( "user_transaction_count", count("*").over(user_window) ) 
-Average Amount Per User df = df.withColumn( "user_avg_amt", avg("amt").over(user_window) )
+    user_col = "user_id"
+    user_window = Window.partitionBy(user_col) 
+    # Transaction Frequency
+    df.withColumn( "user_transaction_count", count("*").over(user_window) ) 
+    Average_Amount_Per_User= df.withColumn( "user_avg_amt", avg("amt").over(user_window) )
 
-# Transaction Velocity Features
+    # Transaction Velocity Features
     print("Creating transaction velocity features...")
 
     if user_col in df.columns:
@@ -119,8 +119,7 @@ Average Amount Per User df = df.withColumn( "user_avg_amt", avg("amt").over(user
             count("*").over(last_window)
         )
 
-  df = df.drop( "date_clean", "date_part", "time_part", "month_slash", "day_slash", "day_dash",
-               "month_dash", "prev_seconds", "year_long", "month_long", "day_long", "hour_long" )
+    df = df.drop( "date_clean", "date_part", "time_part", "month_slash",     "day_slash", "day_dash", "month_dash", "prev_seconds", "year_long", "month_long", "day_long", "hour_long" )
     print("_" * 50)
     print(f"Total Columns: {len(df.columns)}")
     print(f"Final Rows: {df.count():,}")
