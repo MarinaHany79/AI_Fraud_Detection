@@ -36,41 +36,22 @@ def engineer_features(df):
         print(f"Dropped {before_count - after_count:,} rows "f"with invalid dates")
 
     print(f"Remaining rows: {after_count:,}")
+    
     print("Creating time-based features.")
-    df = df.withColumn("is_night",when((col("hour") >= 22) |(col("hour") <= 5),1).otherwise(0))
-    df = df.withColumn("is_business_hours",
-        when((col("hour") >= 9) &(col("hour") <= 17), 1 ).otherwise(0) )
-
+    df = df.withColumn("is_night",when((col("hour") >= 22) | (col("hour") <= 5),1).otherwise(0))
+    df = df.withColumn("is_business_hours", when((col("hour") >= 9) &(col("hour") <= 17), 1 ).otherwise(0) )
     df = df.withColumn( "day_of_month", col("day"))
 
-    df = df.withColumn(
-        "year_long",
-        col("year").cast("long")
-    )
+    df = df.withColumn( "year_long",col("year").cast("long") )
+    df = df.withColumn("month_long",col("month").cast("long"))
+    df = df.withColumn("day_long",col("day").cast("long"))
+
+    df = df.withColumn( "hour_long", col("hour").cast("long"))
+
+    df = df.withColumn( "minute_long",col("minute").cast("long"))
 
     df = df.withColumn(
-        "month_long",
-        col("month").cast("long")
-    )
-
-    df = df.withColumn(
-        "day_long",
-        col("day").cast("long")
-    )
-
-    df = df.withColumn(
-        "hour_long",
-        col("hour").cast("long")
-    )
-
-    df = df.withColumn(
-        "minute_long",
-        col("minute").cast("long")
-    )
-
-    df = df.withColumn(
-        "trans_seconds",
-        (
+        "trans_seconds",(
             col("year_long") * 100000000 +
             col("month_long") * 1000000 +
             col("day_long") * 10000 +
@@ -78,23 +59,14 @@ def engineer_features(df):
             col("minute_long")
         ).cast("long")
     )
-    if "amt" in df.columns:
 
-        df = df.withColumn(
-            "amt",
-            col("amt").cast("double")
-        )
-
-        df = df.fillna({
-            "amt": 0.0
-        })
-
+    print("Creating user identifier...")
+    df = df.withColumn( "user_id", concat_ws( "_", col("city"), col("job"), col("dob") ) )
+   
     if "cc_num" in df.columns:
-
         df = df.withColumn(
             "cc_num",
-            trim(
-                regexp_replace(
+            trim(regexp_replace(
                     col("cc_num"),
                     '"',
                     ''
@@ -102,41 +74,15 @@ def engineer_features(df):
             )
         )
 
-    if "trans_num" in df.columns:
+    print("Creating user behavior features")
 
-        df = df.withColumn(
-            "trans_num",
-            trim(
-                regexp_replace(
-                    col("trans_num"),
-                    '"',
-                    ''
-                )
-            )
-        )
+user_col = "user_id"
+user_window = Window.partitionBy(user_col) 
+# Transaction Frequency
+df.withColumn( "user_transaction_count", count("*").over(user_window) ) 
+Average Amount Per User df = df.withColumn( "user_avg_amt", avg("amt").over(user_window) )
 
-    print("Creating user behavior features...")
-
-    user_col = (
-        "cc_num"
-        if "cc_num" in df.columns
-        else "trans_num"
-    )
-
-    if user_col in df.columns:
-
-        user_window = Window.partitionBy(user_col)
-
-        df = df.withColumn(
-            "user_transaction_count",
-            count("*").over(user_window)
-        )
-
-        df = df.withColumn(
-            "user_avg_amt",
-            avg("amt").over(user_window)
-        )
-
+# Transaction Velocity Features
     print("Creating transaction velocity features...")
 
     if user_col in df.columns:
@@ -183,22 +129,9 @@ def engineer_features(df):
             count("*").over(last_window)
         )
 
-    df = df.drop(
-        "date_clean",
-        "date_part",
-        "time_part",
-        "month_slash",
-        "day_slash",
-        "day_dash",
-        "month_dash",
-        "prev_seconds",
-        "year_long",
-        "month_long",
-        "day_long",
-        "hour_long",
-        "minute_long"
-    )
-    print("=" * 50)
+  df = df.drop( "date_clean", "date_part", "time_part", "month_slash", "day_slash", "day_dash",
+               "month_dash", "prev_seconds", "year_long", "month_long", "day_long", "hour_long" )
+    print("_" * 50)
     print(f"Total Columns: {len(df.columns)}")
     print(f"Final Rows: {df.count():,}")
     print("=" * 50)
