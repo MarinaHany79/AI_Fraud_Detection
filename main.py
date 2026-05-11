@@ -7,7 +7,7 @@ from data_proprocessing import handle_missing_values, balance_classes_undersampl
 from feature_engineering import engineer_features
 from EDA import perform_eda
 from Fraud_detect_model import split_data, train_all_models
-from model_Evaluation import compare_models, plot_comparison, quick_evaluation
+from model_Evaluation import compare_models, draw_comparison,evalute_model
 
 def save_data(df, output_path, format="csv", mode="overwrite"):
     print(f"\nSaving data to: {output_path}")
@@ -126,26 +126,22 @@ def run_fraud_detection_pipeline(file_path, balance_method="undersample", do_eda
         models = train_all_models(train_df)
         print(f"   Trained {len(models)} models")
         
-        metrics, predictions = compare_models(models, test_df)
+        all_metrics, all_predictions = compare_models( models, test_df )
         
-        try:
-            plot_comparison(metrics)
-            print("   Comparison plot generated")
-        except Exception as e:
-            print(f"   Could not generate plot: {e}")
+       comparison_figure = draw_comparison(all_metrics)
         
-        best_model = max(metrics, key=lambda x: x.get('f1_score', 0))
-        
-        print("\n" + "="*60)
-        print("FINAL RESULTS")
-        print("="*60)
-        print(f"Best Model: {best_model['model']}")
-        print(f"   - Accuracy:  {best_model.get('accuracy', 0):.4f}")
-        print(f"   - F1-Score:  {best_model.get('f1_score', 0):.4f}")
-        print(f"   - ROC-AUC:   {best_model.get('roc_auc', 0):.4f}")
-        print(f"   - Precision: {best_model.get('precision', 0):.4f}")
-        print(f"   - Recall:    {best_model.get('recall', 0):.4f}")
-    
+       best_model_metrics = max( all_metrics, key=lambda x: x['f1_score'] ) 
+       best_model_name = best_model_metrics['model'] 
+       print("\n" + "=" * 70)
+       print("BEST MODEL") 
+       print("=" * 70) 
+       print( f"Best Model Based on F1-Score: " f"{best_model_name}" ) 
+       print( f"Accuracy : " f"{best_model_metrics['accuracy']:.4f}" ) 
+       print( f"Precision: " f"{best_model_metrics['precision']:.4f}" ) 
+       print( f"Recall : " f"{best_model_metrics['recall']:.4f}" )
+       print( f"F1-Score : " f"{best_model_metrics['f1_score']:.4f}" ) 
+       print( f"ROC-AUC : " f"{best_model_metrics['roc_auc']:.4f}" )
+
     if save_data_path:
         print("\nSTEP 9: SAVING PROCESSED DATA")
         cols_to_drop = ["features", "scaled_features"]
