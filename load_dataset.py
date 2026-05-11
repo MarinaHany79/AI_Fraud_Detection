@@ -1,10 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, when, regexp_replace, trim, lit, regexp_extract, expr, to_timestamp
-from pyspark.sql.types import DoubleType, IntegerType, StringType
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-import pandas as pd
+from pyspark.sql.functions import col, regexp_replace, trim, regexp_extract
 
 def load_data(file_path):
     spark0 = SparkSession.builder.appName("Fraud Detection System").getOrCreate()

@@ -1,10 +1,12 @@
 from pyspark.sql.functions import (
     avg, stddev, expr, count, col, min as spark_min, max as spark_max
 )
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
+
 
 def perform_eda(df, sample_size=10000):    
     print("\n1. BASIC STATISTICS")
