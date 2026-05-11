@@ -122,9 +122,8 @@ def handle_missing_values(df):
             df_clean = df_clean.fillna({column: 0})
             print(f"{column}: filled {null_count} nulls with 0")
     
-    print("\n" + "="*50)
     print("FINAL RESULT")
-    print("="*50)
+    print("_"*50)
     
     print("\nSample cleaned data (first 3 rows):")
     df_clean.select("merchant", "job", "category").show(3, truncate=50)
