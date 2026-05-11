@@ -1,4 +1,5 @@
-from pyspark.sql.functions import col, count, when , trim, regexp_replace, StringType
+from pyspark.sql.functions import col, when, trim, regexp_replace
+from pyspark.sql.types import StringType
 
 def clean_string_columns(df):
     string_columns = ['merchant', 'job', 'category', 'city', 'state', 'trans_num', 'dob']
@@ -28,18 +29,11 @@ def clean_string_columns(df):
             df = df.withColumn(column,
                 when(col(column).isin('', 'null', 'NULL', 'None'), None)
                 .otherwise(col(column))
-            )
-            
-            print(f"   Cleaned column: {column}")
-    
+            )    
     return df
 
-def clean_merchant_column_specific(df):
-    """Specifically clean merchant column which has the most issues"""
-    
-    if "merchant" in df.columns:
-        print("   Special cleaning for merchant column...")
-        
+def clean_merchant_column_specific(df):    
+    if "merchant" in df.columns:        
         df = df.withColumn("merchant",
             regexp_replace(
                 regexp_replace(
@@ -84,8 +78,7 @@ def handle_missing_values(df):
     ]
     
     if not essential_cols:
-        essential_cols = [df.columns[0], df.columns[1]]
-        print(f"No essential columns detected, using: {essential_cols}")
+        print(f"No essential columns detected")
     else:
         print(f"Essential columns: {essential_cols}")
     
@@ -117,17 +110,11 @@ def handle_missing_values(df):
         elif 'string' in col_type or 'char' in col_type:
             df_clean = df_clean.fillna({column: "unknown"})
             print(f"{column}: filled {null_count} nulls with 'unknown'")
-        
         else:
             df_clean = df_clean.fillna({column: 0})
             print(f"{column}: filled {null_count} nulls with 0")
-    
-    print("FINAL RESULT")
-    print("_"*50)
-    
-    print("\nSample cleaned data (first 3 rows):")
-    df_clean.select("merchant", "job", "category").show(3, truncate=50)
-    
+
+
     remaining_nulls = 0
     for column in df_clean.columns:
         null_count = df_clean.filter(col(column).isNull()).count()
@@ -136,12 +123,9 @@ def handle_missing_values(df):
             print(f"{column}: still has {null_count} nulls")
     
     if remaining_nulls == 0:
-        print("All missing values handled successfully")
+        print("All missing values handled successfully!")
     else:
-        print(f"{remaining_nulls} total nulls remaining")
-    
-    print(f"\nFinal shape: {df_clean.count():,} rows, {len(df_clean.columns)} columns")
-    
+        print(f"{remaining_nulls} total nulls remaining")    
     return df_clean
 
 def balance_classes_undersample(df, fraud_col="is_fraud", seed=42):
@@ -154,7 +138,6 @@ def balance_classes_undersample(df, fraud_col="is_fraud", seed=42):
     fraud_count = fraud_df.count()
     non_fraud_count = non_fraud_df.count()
     
-    print(f"Original distribution:")
     print(f"   Fraud (1): {fraud_count} rows ({fraud_count/non_fraud_count*100:.2f}% of non-fraud)")
     print(f"   Non-Fraud (0): {non_fraud_count} rows")
     
@@ -183,12 +166,11 @@ def balance_classes_oversample(df, fraud_col="is_fraud", seed=42):
     fraud_count = fraud_df.count()
     non_fraud_count = non_fraud_df.count()
     
-    print(f"Original distribution:")
     print(f"   Fraud (1): {fraud_count} rows")
     print(f"   Non-Fraud (0): {non_fraud_count} rows")
     
     if fraud_count == 0:
-        print("No fraud samples found")
+        print("No fraud samples found!")
         return df
     
     multiplier = (non_fraud_count // fraud_count) + 1
