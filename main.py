@@ -35,53 +35,70 @@ def run_fraud_detection_pipeline(file_path, balance_method="undersample", do_eda
     df_raw = load_data(file_path)
     print(f"   Loaded {df_raw.count():,} rows with {len(df_raw.columns)} columns")
 
-    print("\nSTEP 2: Clean String Columns")
-    df_clean_string = clean_string_columns(df_raw)
-    df_clean_merchant= clean_merchant_column_specific(df_clean_string)
-   
-    print("\nSTEP 3: HANDLING MISSING VALUES")
+    print("\nSTEP 2: HANDLING MISSING VALUES")
     df_clean = handle_missing_values(df_raw)
     print(f"   After cleaning: {df_clean.count():,} rows")
     
-    print("\nSTEP 4: CASTING COLUMNS")
+    print("\nSTEP 3: CASTING COLUMNS")
     df_typed = cast_columns(df_clean)
     print("   Data types converted successfully")
     
-    print("\nSTEP 5: FEATURE ENGINEERING")
+    print("\nSTEP : FEATURE ENGINEERING")
     df_features = engineer_features(df_typed)
     print(f"   Feature engineering complete: {len(df_features.columns)} total columns")
     
     if do_eda:
-        print("\nSTEP 6: EXPLORATORY DATA ANALYSIS")
+        print("\nSTEP 5: EXPLORATORY DATA ANALYSIS")
         perform_eda(df_features, sample_size=50000)
         print("   EDA complete")
-    
-    print("\nSTEP 7: PREPARING DATA FOR MODELING")
-    
-    exclude_cols = ["is_fraud", "trans_datetime", "trans_date_trans_time", "dob", 
-                    "dob_parsed", "prev_trans_time", "age_group", "trans_year", "birth_year"]
-    exclude_cols = [c for c in exclude_cols if c in df_features.columns]
-    
-    numeric_cols = []
-    for col_name, col_type in df_features.dtypes:
-        if col_type in ('int', 'double', 'float', 'bigint') and col_name not in exclude_cols:
-            numeric_cols.append(col_name)
-    
-    print(f"   Using {len(numeric_cols)} numeric features for modeling")
-    
-    for col_name in numeric_cols:
-        df_features = df_features.fillna({col_name: 0.0})
-    
-    assembler = VectorAssembler(inputCols=numeric_cols, outputCol="features", handleInvalid="skip")
+    print("\nSTEP 6: PREPARING DATA FOR MODELING")
+    selected_features = [
+        "amt",
+        "hour",
+        "minute",
+        "is_night",
+        "is_business_hours",
+        "day_of_month",
+        "user_transaction_count",
+        "user_avg_amt",
+        "hours_since_last_trans",
+        "is_rapid_transaction",
+        "trans_count_last_24h"
+    ]
+    selected_features = [
+        c for c in selected_features
+        if c in df_features.columns
+    ]
+
+    print(f"Selected Features ({len(selected_features)}):")
+    for feature in selected_features:
+        print(f"   - {feature}")
+    for feature in selected_features:
+
+        df_features = df_features.fillna({
+            feature: 0.0
+        })
+    assembler = VectorAssembler(
+        inputCols=selected_features,
+        outputCol="features",
+        handleInvalid="skip"
+    )
+
     df_assembled = assembler.transform(df_features)
-    df_assembled = df_assembled.filter(col("features").isNotNull())
-    
-    scaler = StandardScaler(inputCol="features", outputCol="scaled_features", 
-                           withStd=True, withMean=True)
+    df_assembled = df_assembled.filter(
+        col("features").isNotNull()
+    )
+    scaler = StandardScaler(
+        inputCol="features",
+        outputCol="scaled_features",
+        withStd=True,
+        withMean=True
+    )
     scaler_model = scaler.fit(df_assembled)
     df_scaled = scaler_model.transform(df_assembled)
-    
-    print("\nSTEP 8: BALANCING CLASSES")
+    print("Feature preparation completed successfully")
+    print(f"Using {len(selected_features)} features for modeling")
+    print("\nSTEP 7: BALANCING CLASSES")
     
     if balance_method == "undersample":
         df_balanced = balance_classes_undersample(df_scaled, fraud_col="is_fraud")
@@ -100,7 +117,7 @@ def run_fraud_detection_pipeline(file_path, balance_method="undersample", do_eda
     best_model = None
     
     if do_training:
-        print("\nSTEP 9: MODEL TRAINING & EVALUATION")
+        print("\nSTEP 8: MODEL TRAINING & EVALUATION")
         
         train_df, test_df = split_data(df_balanced, train_ratio=0.7, test_ratio=0.3)
         print(f"   Train set: {train_df.count():,} rows")
@@ -130,21 +147,21 @@ def run_fraud_detection_pipeline(file_path, balance_method="undersample", do_eda
         print(f"   - Recall:    {best_model.get('recall', 0):.4f}")
     
     if save_data_path:
-        print("\nSTEP 10: SAVING PROCESSED DATA")
+        print("\nSTEP 9: SAVING PROCESSED DATA")
         cols_to_drop = ["features", "scaled_features"]
         cols_to_drop = [c for c in cols_to_drop if c in df_balanced.columns]
         df_to_save = df_balanced.drop(*cols_to_drop)
         save_data(df_to_save, save_data_path, format="csv")
     
     if save_model_path and best_model and models:
-        print("\nSTEP 11: SAVING BEST MODEL")
+        print("\nSTEP 10: SAVING BEST MODEL")
         if best_model['model'] in models:
             best_model_obj = models[best_model['model']]
             model_filename = best_model['model'].replace(' ', '_')
             save_model(best_model_obj, f"{save_model_path}/{model_filename}")
     
     if save_metrics_path and metrics:
-        print("\nSTEP 12: SAVING METRICS")
+        print("\nSTEP 11: SAVING METRICS")
         save_metrics(metrics, save_metrics_path)
 
     return df_balanced, models, metrics
