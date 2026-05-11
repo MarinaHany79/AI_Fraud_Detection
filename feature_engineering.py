@@ -1,18 +1,5 @@
-from pyspark.sql.functions import (
-    avg,
-    count,
-    lag,
-    when,
-    col,
-    trim,
-    regexp_replace,
-    split,
-    regexp_extract,
-    coalesce
-)
-
+from pyspark.sql.functions import (avg,count,lag,when,col,trim,regexp_replace,split,regexp_extract,coalesce)
 from pyspark.sql import Window
-
 
 def engineer_features(df):
     if "trans_date_trans_time" in df.columns:
@@ -26,124 +13,35 @@ def engineer_features(df):
                 )
             )
         )
-        df = df.withColumn(
-            "date_part",
-            split(col("date_clean"), " ")[0]
-        )
-
-        df = df.withColumn(
-            "time_part",
-            split(col("date_clean"), " ")[1]
-        )
-        df = df.withColumn(
-            "year",
-            regexp_extract(
-                col("date_part"),
-                r'(19|20)\d{2}',
-                0
-            ).cast("int")
-        )
-        df = df.withColumn(
-            "month_slash",
-            when(
-                col("date_part").contains("/"),
-                split(col("date_part"), "/")[0]
-            )
-        )
-
-        df = df.withColumn(
-            "day_slash",
-            when(
-                col("date_part").contains("/"),
-                split(col("date_part"), "/")[1]
-            )
-        )
-        df = df.withColumn(
-            "day_dash",
-            when(
-                col("date_part").contains("-"),
-                split(col("date_part"), "-")[0]
-            )
-        )
-
-        df = df.withColumn(
-            "month_dash",
-            when(
-                col("date_part").contains("-"),
-                split(col("date_part"), "-")[1]
-            )
-        )
-        df = df.withColumn(
-            "month",
-            coalesce(
-                col("month_slash"),
-                col("month_dash")
-            ).cast("int")
-        )
-
-        df = df.withColumn(
-            "day",
-            coalesce(
-                col("day_slash"),
-                col("day_dash")
-            ).cast("int")
-        )
-        df = df.withColumn(
-            "hour",
-            split(col("time_part"), ":")[0].cast("int")
-        )
-
-        df = df.withColumn(
-            "minute",
-            split(col("time_part"), ":")[1].cast("int")
-        )
-
-        df = df.fillna({
-            "hour": 0,
-            "minute": 0,
-            "month": 1,
-            "day": 1
-        })
+        
+        df = df.withColumn("date_part",split(col("date_clean"), " ")[0])
+        df = df.withColumn( "time_part",split(col("date_clean"), " ")[1] )
+        df = df.withColumn("year", regexp_extract(col("date_part"),r'(19|20)\d{2}',0).cast("int"))
+        df = df.withColumn("month_slash",when( col("date_part").contains("/"), split(col("date_part"), "/")[0]) )
+        df = df.withColumn("day_slash",when(col("date_part").contains("/"),split(col("date_part"), "/")[1] ))
+        df = df.withColumn("day_dash",when(col("date_part").contains("-"),split(col("date_part"), "-")[0]))
+        df = df.withColumn( "month_dash", when(col("date_part").contains("-"),split(col("date_part"), "-")[1]))\
+        
+        df = df.withColumn("month",coalesce(col("month_slash"),col("month_dash")).cast("int"))
+        df = df.withColumn("day",coalesce(col("day_slash"),col("day_dash")).cast("int") )
+        
+        df = df.withColumn("hour", split(col("time_part"), ":")[0].cast("int"))
+        df = df.withColumn("minute",split(col("time_part"), ":")[1].cast("int"))
+        df = df.fillna({"hour": 0,"minute": 0,"month": 1,"day": 1})
+        
     before_count = df.count()
-
-    df = df.filter(
-        col("year").isNotNull() &
-        col("month").isNotNull() &
-        col("day").isNotNull()
-    )
-
+    df = df.filter(col("year").isNotNull() &col("month").isNotNull() &col("day").isNotNull())
     after_count = df.count()
-
     if before_count > after_count:
-
-        print(
-            f"Dropped {before_count - after_count:,} rows "
-            f"with invalid dates"
-        )
+        print(f"Dropped {before_count - after_count:,} rows "f"with invalid dates")
 
     print(f"Remaining rows: {after_count:,}")
-    print("Creating time-based features...")
-    df = df.withColumn(
-        "is_night",
-        when(
-            (col("hour") >= 22) |
-            (col("hour") <= 5),
-            1
-        ).otherwise(0)
-    )
-    df = df.withColumn(
-        "is_business_hours",
-        when(
-            (col("hour") >= 9) &
-            (col("hour") <= 17),
-            1
-        ).otherwise(0)
-    )
+    print("Creating time-based features.")
+    df = df.withColumn("is_night",when((col("hour") >= 22) |(col("hour") <= 5),1).otherwise(0))
+    df = df.withColumn("is_business_hours",
+        when((col("hour") >= 9) &(col("hour") <= 17), 1 ).otherwise(0) )
 
-    df = df.withColumn(
-        "day_of_month",
-        col("day")
-    )
+    df = df.withColumn( "day_of_month", col("day"))
 
     df = df.withColumn(
         "year_long",
