@@ -52,19 +52,9 @@ def run_fraud_detection_pipeline(file_path, balance_method="undersample", do_eda
         perform_eda(df_features, sample_size=50000)
         print("   EDA complete")
     print("\nSTEP 6: PREPARING DATA FOR MODELING")
-    selected_features = [
-        "amt",
-        "hour",
-        "minute",
-        "is_night",
-        "is_business_hours",
-        "day_of_month",
-        "user_transaction_count",
-        "user_avg_amt",
-        "hours_since_last_trans",
-        "is_rapid_transaction",
-        "trans_count_last_24h"
-    ]
+    selected_features = [ "amt", "hour", "minute", "is_night", "is_business_hours", "day_of_month", 
+                         "user_transaction_count", "user_avg_amt","hours_since_last_trans","is_rapid_transaction",
+                         "trans_count_last_24h"]
     selected_features = [
         c for c in selected_features
         if c in df_features.columns
