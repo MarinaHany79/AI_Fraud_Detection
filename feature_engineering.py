@@ -27,7 +27,6 @@ def engineer_features(df):
         
         df = df.withColumn("hour", split(col("time_part"), ":")[0].cast("int"))
         df = df.withColumn("minute",split(col("time_part"), ":")[1].cast("int"))
-        df = df.fillna({"hour": 0,"minute": 0,"month": 1,"day": 1})
         
     before_count = df.count()
     df = df.filter(col("year").isNotNull() &col("month").isNotNull() &col("day").isNotNull())
@@ -68,7 +67,7 @@ def engineer_features(df):
 
     user_col = "user_id"
     user_window = Window.partitionBy(user_col) 
-    # Transaction Frequency
+
     df.withColumn( "user_transaction_count", count("*").over(user_window) ) 
     Average_Amount_Per_User= df.withColumn( "user_avg_amt", avg("amt").over(user_window) )
 
