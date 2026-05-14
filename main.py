@@ -7,7 +7,7 @@ from data_proprocessing import handle_missing_values, balance_classes_undersampl
 from feature_engineering import engineer_features
 from EDA import perform_eda
 from Fraud_detect_model import split_data, train_all_models
-from model_Evaluation import compare_models, plot_comparison, quick_evaluation
+from model_Evaluation import compare_models, draw_comparison,evalute_model
 
 def save_data(df, output_path, format="csv", mode="overwrite"):
     print(f"\nSaving data to: {output_path}")
@@ -31,40 +31,31 @@ def save_metrics(metrics, output_path):
 def run_fraud_detection_pipeline(file_path, balance_method="undersample", do_eda=True, do_training=True, 
                                  save_data_path=None, save_model_path=None, save_metrics_path=None):
     
-    print("\nSTEP 1: LOADING DATA")
+    print("\n 1.LOADING DATA")
     df_raw = load_data(file_path)
     print(f"   Loaded {df_raw.count():,} rows with {len(df_raw.columns)} columns")
 
-    print("\nSTEP 2: HANDLING MISSING VALUES")
+    print("\n 2.HANDLING MISSING VALUES")
     df_clean = handle_missing_values(df_raw)
     print(f"   After cleaning: {df_clean.count():,} rows")
     
-    print("\nSTEP 3: CASTING COLUMNS")
+    print("\n 3.CASTING COLUMNS")
     df_typed = cast_columns(df_clean)
     print("   Data types converted successfully")
     
-    print("\nSTEP : FEATURE ENGINEERING")
+    print("\n 4.FEATURE ENGINEERING")
     df_features = engineer_features(df_typed)
     print(f"   Feature engineering complete: {len(df_features.columns)} total columns")
     
     if do_eda:
-        print("\nSTEP 5: EXPLORATORY DATA ANALYSIS")
+        print("\n 5.EXPLORATORY DATA ANALYSIS")
         perform_eda(df_features, sample_size=50000)
         print("   EDA complete")
-    print("\nSTEP 6: PREPARING DATA FOR MODELING")
-    selected_features = [
-        "amt",
-        "hour",
-        "minute",
-        "is_night",
-        "is_business_hours",
-        "day_of_month",
-        "user_transaction_count",
-        "user_avg_amt",
-        "hours_since_last_trans",
-        "is_rapid_transaction",
-        "trans_count_last_24h"
-    ]
+        
+    print("\n 6.PREPARING DATA FOR MODELING")
+    selected_features = [ "amt", "hour", "minute", "is_night", "is_business_hours", "day_of_month", 
+                         "user_transaction_count", "user_avg_amt","hours_since_last_trans","is_rapid_transaction",
+                         "trans_count_last_24h"]
     selected_features = [
         c for c in selected_features
         if c in df_features.columns
@@ -98,7 +89,7 @@ def run_fraud_detection_pipeline(file_path, balance_method="undersample", do_eda
     df_scaled = scaler_model.transform(df_assembled)
     print("Feature preparation completed successfully")
     print(f"Using {len(selected_features)} features for modeling")
-    print("\nSTEP 7: BALANCING CLASSES")
+    print("\n 7.BALANCING CLASSES")
     
     if balance_method == "undersample":
         df_balanced = balance_classes_undersample(df_scaled, fraud_col="is_fraud")
@@ -126,28 +117,23 @@ def run_fraud_detection_pipeline(file_path, balance_method="undersample", do_eda
         models = train_all_models(train_df)
         print(f"   Trained {len(models)} models")
         
-        metrics, predictions = compare_models(models, test_df)
+        all_metrics, all_predictions = compare_models( models, test_df )
         
-        try:
-            plot_comparison(metrics)
-            print("   Comparison plot generated")
-        except Exception as e:
-            print(f"   Could not generate plot: {e}")
+        comparison_figure = draw_comparison(all_metrics)
         
-        best_model = max(metrics, key=lambda x: x.get('f1_score', 0))
-        
-        print("\n" + "="*60)
-        print("FINAL RESULTS")
-        print("="*60)
-        print(f"Best Model: {best_model['model']}")
-        print(f"   - Accuracy:  {best_model.get('accuracy', 0):.4f}")
-        print(f"   - F1-Score:  {best_model.get('f1_score', 0):.4f}")
-        print(f"   - ROC-AUC:   {best_model.get('roc_auc', 0):.4f}")
-        print(f"   - Precision: {best_model.get('precision', 0):.4f}")
-        print(f"   - Recall:    {best_model.get('recall', 0):.4f}")
-    
+        best_model_metrics = max( all_metrics, key=lambda x: x['f1_score'] ) 
+        best_model_name = best_model_metrics['model'] 
+
+    print("\n BEST MODEL") 
+    print( f"Best Model Based on F1-Score: " f"{best_model_name}" ) 
+    print( f"Accuracy : " f"{best_model_metrics['accuracy']:.4f}" ) 
+    print( f"Precision: " f"{best_model_metrics['precision']:.4f}" ) 
+    print( f"Recall : " f"{best_model_metrics['recall']:.4f}" )
+    print( f"F1-Score : " f"{best_model_metrics['f1_score']:.4f}" ) 
+    print( f"ROC-AUC : " f"{best_model_metrics['roc_auc']:.4f}" )
+
     if save_data_path:
-        print("\nSTEP 9: SAVING PROCESSED DATA")
+        print("\n 9.SAVING PROCESSED DATA")
         cols_to_drop = ["features", "scaled_features"]
         cols_to_drop = [c for c in cols_to_drop if c in df_balanced.columns]
         df_to_save = df_balanced.drop(*cols_to_drop)
@@ -161,7 +147,7 @@ def run_fraud_detection_pipeline(file_path, balance_method="undersample", do_eda
             save_model(best_model_obj, f"{save_model_path}/{model_filename}")
     
     if save_metrics_path and metrics:
-        print("\nSTEP 11: SAVING METRICS")
+        print("\n 11.SAVING METRICS")
         save_metrics(metrics, save_metrics_path)
 
     return df_balanced, models, metrics
