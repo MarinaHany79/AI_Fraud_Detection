@@ -1,26 +1,7 @@
-from pyspark.sql.functions import (
-    avg,
-    count,
-    lag,
-    when,
-    col,
-    trim,
-    regexp_replace,
-    split,
-    regexp_extract,
-    coalesce
-)
-
+from pyspark.sql.functions import (avg,count,lag,when,col,trim,regexp_replace,split,regexp_extract,coalesce,concat_ws)
 from pyspark.sql import Window
 
-
 def engineer_features(df):
-<<<<<<< HEAD
-=======
-    
-    print("Extracting date and time components")
-    
->>>>>>> 1363e7e5fe7ae5a3d8d82700c563aac7ae1199e7
     if "trans_date_trans_time" in df.columns:
         df = df.withColumn(
             "date_clean",
@@ -32,153 +13,44 @@ def engineer_features(df):
                 )
             )
         )
-        df = df.withColumn(
-            "date_part",
-            split(col("date_clean"), " ")[0]
-        )
-
-        df = df.withColumn(
-            "time_part",
-            split(col("date_clean"), " ")[1]
-        )
-        df = df.withColumn(
-            "year",
-            regexp_extract(
-                col("date_part"),
-                r'(19|20)\d{2}',
-                0
-            ).cast("int")
-        )
-        df = df.withColumn(
-            "month_slash",
-            when(
-                col("date_part").contains("/"),
-                split(col("date_part"), "/")[0]
-            )
-        )
-
-        df = df.withColumn(
-            "day_slash",
-            when(
-                col("date_part").contains("/"),
-                split(col("date_part"), "/")[1]
-            )
-        )
-        df = df.withColumn(
-            "day_dash",
-            when(
-                col("date_part").contains("-"),
-                split(col("date_part"), "-")[0]
-            )
-        )
-
-        df = df.withColumn(
-            "month_dash",
-            when(
-                col("date_part").contains("-"),
-                split(col("date_part"), "-")[1]
-            )
-        )
-        df = df.withColumn(
-            "month",
-            coalesce(
-                col("month_slash"),
-                col("month_dash")
-            ).cast("int")
-        )
-
-        df = df.withColumn(
-            "day",
-            coalesce(
-                col("day_slash"),
-                col("day_dash")
-            ).cast("int")
-        )
-        df = df.withColumn(
-            "hour",
-            split(col("time_part"), ":")[0].cast("int")
-        )
-
-        df = df.withColumn(
-            "minute",
-            split(col("time_part"), ":")[1].cast("int")
-        )
-
-        df = df.fillna({
-            "hour": 0,
-            "minute": 0,
-            "month": 1,
-            "day": 1
-        })
+        
+        df = df.withColumn("date_part",split(col("date_clean"), " ")[0])
+        df = df.withColumn( "time_part",split(col("date_clean"), " ")[1] )
+        df = df.withColumn("year", regexp_extract(col("date_part"),r'(19|20)\d{2}',0).cast("int"))
+        df = df.withColumn("month_slash",when( col("date_part").contains("/"), split(col("date_part"), "/")[0]) )
+        df = df.withColumn("day_slash",when(col("date_part").contains("/"),split(col("date_part"), "/")[1] ))
+        df = df.withColumn("day_dash",when(col("date_part").contains("-"),split(col("date_part"), "-")[0]))
+        df = df.withColumn( "month_dash", when(col("date_part").contains("-"),split(col("date_part"), "-")[1]))\
+        
+        df = df.withColumn("month",coalesce(col("month_slash"),col("month_dash")).cast("int"))
+        df = df.withColumn("day",coalesce(col("day_slash"),col("day_dash")).cast("int") )
+        
+        df = df.withColumn("hour", split(col("time_part"), ":")[0].cast("int"))
+        df = df.withColumn("minute",split(col("time_part"), ":")[1].cast("int"))
+        
     before_count = df.count()
-
-    df = df.filter(
-        col("year").isNotNull() &
-        col("month").isNotNull() &
-        col("day").isNotNull()
-    )
-
+    df = df.filter(col("year").isNotNull() &col("month").isNotNull() &col("day").isNotNull())
     after_count = df.count()
-
     if before_count > after_count:
-
-        print(
-            f"Dropped {before_count - after_count:,} rows "
-            f"with invalid dates"
-        )
+        print(f"Dropped {before_count - after_count:,} rows "f"with invalid dates")
 
     print(f"Remaining rows: {after_count:,}")
-    print("Creating time-based features...")
-    df = df.withColumn(
-        "is_night",
-        when(
-            (col("hour") >= 22) |
-            (col("hour") <= 5),
-            1
-        ).otherwise(0)
-    )
-    df = df.withColumn(
-        "is_business_hours",
-        when(
-            (col("hour") >= 9) &
-            (col("hour") <= 17),
-            1
-        ).otherwise(0)
-    )
+    
+    print("Creating time-based features.")
+    df = df.withColumn("is_night",when((col("hour") >= 22) | (col("hour") <= 5),1).otherwise(0))
+    df = df.withColumn("is_business_hours", when((col("hour") >= 9) &(col("hour") <= 17), 1 ).otherwise(0) )
+    df = df.withColumn( "day_of_month", col("day"))
+
+    df = df.withColumn( "year_long",col("year").cast("long") )
+    df = df.withColumn("month_long",col("month").cast("long"))
+    df = df.withColumn("day_long",col("day").cast("long"))
+
+    df = df.withColumn( "hour_long", col("hour").cast("long"))
+
+    df = df.withColumn( "minute_long",col("minute").cast("long"))
 
     df = df.withColumn(
-        "day_of_month",
-        col("day")
-    )
-
-    df = df.withColumn(
-        "year_long",
-        col("year").cast("long")
-    )
-
-    df = df.withColumn(
-        "month_long",
-        col("month").cast("long")
-    )
-
-    df = df.withColumn(
-        "day_long",
-        col("day").cast("long")
-    )
-
-    df = df.withColumn(
-        "hour_long",
-        col("hour").cast("long")
-    )
-
-    df = df.withColumn(
-        "minute_long",
-        col("minute").cast("long")
-    )
-
-    df = df.withColumn(
-        "trans_seconds",
-        (
+        "trans_seconds",(
             col("year_long") * 100000000 +
             col("month_long") * 1000000 +
             col("day_long") * 10000 +
@@ -186,65 +58,20 @@ def engineer_features(df):
             col("minute_long")
         ).cast("long")
     )
-    if "amt" in df.columns:
 
-        df = df.withColumn(
-            "amt",
-            col("amt").cast("double")
-        )
+    print("Creating user identifier...")
+    df = df.withColumn( "user_id", concat_ws( "_", col("city"), col("job"), col("dob") ) )
+   
 
-        df = df.fillna({
-            "amt": 0.0
-        })
+    print("Creating user behavior features")
 
-    if "cc_num" in df.columns:
+    user_col = "user_id"
+    user_window = Window.partitionBy(user_col) 
 
-        df = df.withColumn(
-            "cc_num",
-            trim(
-                regexp_replace(
-                    col("cc_num"),
-                    '"',
-                    ''
-                )
-            )
-        )
+    df.withColumn( "user_transaction_count", count("*").over(user_window) ) 
+    Average_Amount_Per_User= df.withColumn( "user_avg_amt", avg("amt").over(user_window) )
 
-    if "trans_num" in df.columns:
-
-        df = df.withColumn(
-            "trans_num",
-            trim(
-                regexp_replace(
-                    col("trans_num"),
-                    '"',
-                    ''
-                )
-            )
-        )
-
-    print("Creating user behavior features...")
-
-    user_col = (
-        "cc_num"
-        if "cc_num" in df.columns
-        else "trans_num"
-    )
-
-    if user_col in df.columns:
-
-        user_window = Window.partitionBy(user_col)
-
-        df = df.withColumn(
-            "user_transaction_count",
-            count("*").over(user_window)
-        )
-
-        df = df.withColumn(
-            "user_avg_amt",
-            avg("amt").over(user_window)
-        )
-
+    # Transaction Velocity Features
     print("Creating transaction velocity features...")
 
     if user_col in df.columns:
@@ -291,29 +118,10 @@ def engineer_features(df):
             count("*").over(last_window)
         )
 
-    df = df.drop(
-        "date_clean",
-        "date_part",
-        "time_part",
-        "month_slash",
-        "day_slash",
-        "day_dash",
-        "month_dash",
-        "prev_seconds",
-        "year_long",
-        "month_long",
-        "day_long",
-        "hour_long",
-        "minute_long"
-    )
-    print("=" * 50)
-<<<<<<< HEAD
+    df = df.drop( "date_clean", "date_part", "time_part", "month_slash",     "day_slash", "day_dash", "month_dash", "prev_seconds", "year_long", "month_long", "day_long", "hour_long" )
+    print("_" * 50)
     print(f"Total Columns: {len(df.columns)}")
     print(f"Final Rows: {df.count():,}")
     print("=" * 50)
 
     return df
-=======
-    
-    return df
->>>>>>> 1363e7e5fe7ae5a3d8d82700c563aac7ae1199e7

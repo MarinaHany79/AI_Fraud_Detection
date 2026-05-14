@@ -113,18 +113,8 @@ def handle_missing_values(df):
         else:
             df_clean = df_clean.fillna({column: 0})
             print(f"{column}: filled {null_count} nulls with 0")
-<<<<<<< HEAD
 
 
-=======
-    
-    print("FINAL RESULT")
-    print("_"*50)
-    
-    print("\nSample cleaned data (first 3 rows):")
-    df_clean.select("merchant", "job", "category").show(3, truncate=50)
-    
->>>>>>> 1363e7e5fe7ae5a3d8d82700c563aac7ae1199e7
     remaining_nulls = 0
     for column in df_clean.columns:
         null_count = df_clean.filter(col(column).isNull()).count()
@@ -133,18 +123,9 @@ def handle_missing_values(df):
             print(f"{column}: still has {null_count} nulls")
     
     if remaining_nulls == 0:
-<<<<<<< HEAD
         print("All missing values handled successfully!")
     else:
         print(f"{remaining_nulls} total nulls remaining")    
-=======
-        print("All missing values handled successfully")
-    else:
-        print(f"{remaining_nulls} total nulls remaining")
-    
-    print(f"\nFinal shape: {df_clean.count():,} rows, {len(df_clean.columns)} columns")
-    
->>>>>>> 1363e7e5fe7ae5a3d8d82700c563aac7ae1199e7
     return df_clean
 
 def balance_classes_undersample(df, fraud_col="is_fraud", seed=42):
@@ -189,7 +170,7 @@ def balance_classes_oversample(df, fraud_col="is_fraud", seed=42):
     print(f"   Non-Fraud (0): {non_fraud_count} rows")
     
     if fraud_count == 0:
-        print("No fraud samples found")
+        print("No fraud samples found!")
         return df
     
     multiplier = (non_fraud_count // fraud_count) + 1
