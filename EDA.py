@@ -23,7 +23,6 @@ def perform_eda(df, sample_size=10000):
             fraud_pct = (fraud_row['count'].values[0] / total) * 100
             print(f"\nFraud percentage: {fraud_pct:.2f}%")
             print(f"Non-fraud percentage: {100 - fraud_pct:.2f}%")
-            
     print("\nTransaction Amount Statistics:")
 
     df_clean.select("amt").summary("count", "mean", "stddev", "min", "25%", "50%", "75%", "max").show())
@@ -127,5 +126,3 @@ def perform_eda(df, sample_size=10000):
         print("\nFraud by Transaction Speed:")
         print(f"Rapid Transactions: {rapid_fraud:.2f}% fraud")
         print(f"Normal Transactions: {normal_fraud:.2f}% fraud")
-
-    return pdf

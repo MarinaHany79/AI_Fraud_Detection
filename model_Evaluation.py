@@ -7,40 +7,20 @@ import numpy as np
 def evaluate_model(model, test_data, model_name="Model"):
     print(f"\nEvaluating {model_name}")
     predictions = model.transform(test_data)
-    evaluator_precision = MulticlassClassificationEvaluator(
-        labelCol="is_fraud", 
-        predictionCol="prediction", 
-        metricName="precisionByLabel"
-    )
+    evaluator_precision = MulticlassClassificationEvaluator(labelCol="is_fraud", predictionCol="prediction", metricName="precisionByLabel")
     precision = evaluator_precision.evaluate(predictions, {evaluator_precision.metricLabel: 1.0})
-    evaluator_recall = MulticlassClassificationEvaluator(
-        labelCol="is_fraud", 
-        predictionCol="prediction", 
-        metricName="recallByLabel"
-    )
+    
+    evaluator_recall = MulticlassClassificationEvaluator(labelCol="is_fraud", predictionCol="prediction",metricName="recallByLabel")
     recall = evaluator_recall.evaluate(predictions, {evaluator_recall.metricLabel: 1.0})
     
-    evaluator_f1 = MulticlassClassificationEvaluator(
-        labelCol="is_fraud", 
-        predictionCol="prediction", 
-        metricName="f1"
-    )
+    evaluator_f1 = MulticlassClassificationEvaluator(labelCol="is_fraud", predictionCol="prediction",metricName="f1" )
     f1 = evaluator_f1.evaluate(predictions)
     
-    evaluator_accuracy = MulticlassClassificationEvaluator(
-        labelCol="is_fraud", 
-        predictionCol="prediction", 
-        metricName="accuracy"
-    )
+    evaluator_accuracy = MulticlassClassificationEvaluator(labelCol="is_fraud", predictionCol="prediction", metricName="accuracy")
     accuracy = evaluator_accuracy.evaluate(predictions)
     
-    evaluator_auc = BinaryClassificationEvaluator(
-        labelCol="is_fraud", 
-        rawPredictionCol="rawPrediction", 
-        metricName="areaUnderROC"
-    )
+    evaluator_auc = BinaryClassificationEvaluator(labelCol="is_fraud", rawPredictionCol="rawPrediction", metricName="areaUnderROC")
     auc = evaluator_auc.evaluate(predictions)
-    
 
     print(f"{model_name} RESULTS")
     print(f"Accuracy:  {accuracy}")
@@ -62,13 +42,8 @@ def evaluate_model(model, test_data, model_name="Model"):
     print(f"         Fraud         {fp:>6}   {tp:>6}")
     
     metrics = {
-        'model': model_name,
-        'accuracy': accuracy,
-        'precision': precision,
-        'recall': recall,
-        'f1_score': f1,
-        'roc_auc': auc,
-        'tn': tn, 'fp': fp, 'fn': fn, 'tp': tp
+        'model': model_name,'accuracy': accuracy,'precision': precision,'recall': recall,'f1_score': f1,
+        'roc_auc': auc,'tn': tn, 'fp': fp, 'fn': fn, 'tp': tp
     }
     
     return metrics, predictions
@@ -98,9 +73,8 @@ def compare_models(models_dict, test_data):
     print(f"Best by ROC-AUC: {best_auc['model']} (AUC = {best_auc['roc_auc']:.4f})")
     return all_metrics, all_predictions
 
-def plot_comparison(metrics_list):
+def draw_comparison(metrics_list):
     df = pd.DataFrame(metrics_list)
-    
     fig, ax = plt.subplots(figsize=(10, 6))
     
     x = np.arange(len(df['model']))
@@ -127,19 +101,3 @@ def plot_comparison(metrics_list):
     
     return fig
 
-def quick_evaluation(model, test_data):
-    
-    predictions = model.transform(test_data)
-    
-    evaluator_acc = MulticlassClassificationEvaluator(labelCol="is_fraud", predictionCol="prediction", metricName="accuracy")
-    accuracy = evaluator_acc.evaluate(predictions)
-    
-    evaluator_f1 = MulticlassClassificationEvaluator(labelCol="is_fraud", predictionCol="prediction", metricName="f1")
-    f1 = evaluator_f1.evaluate(predictions)
-    
-    evaluator_auc = BinaryClassificationEvaluator(labelCol="is_fraud", rawPredictionCol="rawPrediction", metricName="areaUnderROC")
-    auc = evaluator_auc.evaluate(predictions)
-    
-    print(f"Accuracy: {accuracy:.4f} | F1-Score: {f1:.4f} | ROC-AUC: {auc:.4f}")
-    
-    return accuracy, f1, auc
